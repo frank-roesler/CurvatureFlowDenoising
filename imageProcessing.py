@@ -40,6 +40,10 @@ def addReflectionPadding(imgArray: np.array) -> np.array:
     return result
 
 
+def removeBoundary(imgArray: np.array) -> np.array:
+    return imgArray[1:-1, 1:-1]
+
+
 def getTestImage(height: int, width: int) -> np.array:
     result = np.zeros((height, width))
     barWidth = width // 16
@@ -49,6 +53,19 @@ def getTestImage(height: int, width: int) -> np.array:
     result[
         height // 4 - barWidth : height // 4 + barWidth, width // 8 : -width // 8
     ] = 1
+
+    # Add filled discs
+    radii = [2**k for k in range(int(np.log2(height)))]
+    center_x = width - width // 8
+    center_y = 2 * height // 5
+    for i, radius in enumerate(radii):
+        if center_y > height:
+            break
+        y, x = np.ogrid[-center_y : height - center_y, -center_x : width - center_x]
+        mask = x * x + y * y <= radius * radius
+        result[mask] = 1
+        shift = 2 * (radius + radii[i - 1]) if i > 0 else 2 * radius
+        center_y += shift + height // 16
     return result
 
 
@@ -58,9 +75,9 @@ def getTestImage(height: int, width: int) -> np.array:
 # ax[1].imshow(addReflectionPadding(img))
 # plt.show()
 
-fig, ax = plt.subplots(1, 4, figsize=(16, 4))
-ax[0].imshow(getTestImage(128, 256))
-ax[1].imshow(getTestImage(256, 128))
-ax[2].imshow(getTestImage(128, 128))
-ax[3].imshow(getTestImage(64, 64))
-plt.show()
+# fig, ax = plt.subplots(1, 4, figsize=(16, 4))
+# ax[0].imshow(getTestImage(128, 256))
+# ax[1].imshow(getTestImage(256, 128))
+# ax[2].imshow(getTestImage(128, 128))
+# ax[3].imshow(getTestImage(64, 64))
+# plt.show()
