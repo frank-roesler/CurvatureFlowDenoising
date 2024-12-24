@@ -1,5 +1,6 @@
 myEpsilon = 1e-8
 
+imgPath = "IMG_1638_large.JPG"
 dt = 0.1
 iters = 500
 stencil = 1

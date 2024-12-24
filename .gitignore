@@ -2,3 +2,8 @@ Literature/
 .venv/
 __pycache__/
 .DS_Store
+results/
+*.jpg
+*.JPG
+*.jpeg
+*.png
