@@ -14,6 +14,11 @@ imagePadding = "constant"  # must work for np.pad and scipy.ndimage.convolve
 VGradient = 0.02
 
 # Thresholds for mean curvature modulation
-# (do nothing < M1 < min/max flow < M2 < smoothing)
 M1 = 0.01
 M2 = 0.7
+# meanCurvature < M1:
+#   do nothing;
+# M1 < meanCurvature < M2:
+#   min/max flow;
+# M2 < meanCurvature:
+#   smoothing;
