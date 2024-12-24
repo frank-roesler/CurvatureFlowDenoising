@@ -6,21 +6,22 @@ from functools import partial
 if __name__ == "__main__":
     img = np.array(convertToGrayScale(imgPath))
     noise = noiseLvl * np.random.randn(*img.shape)
+    noisyImg = img + noise
 
     # flowFunction = partial(gradientModulatedMeanCurvFlow, VGradient=VGradient)
-    flowFunction = partial(meanCurvModulatedFlow, th1=M1, th2=M2)
     # flowFunction = partial(doubleModulatedFlow, VGradient=VGradient, th1=M1, th2=M2)
     # flowFunction = partial(doubleModulatedFlowReversed, VGradient=VGradient, th1=M1, th2=M2)
+    flowFunction = partial(meanCurvModulatedFlow, th1=M1, th2=M2)
 
     denoisedImage = solveLevelSetEquationGrayscale(
-        img + noise,
+        noisyImg,
         stencil,
         iters,
         dt,
         flowFunction,
-        plot=True,
+        plot=plotDuringLoop,
         plottingFreq=plottingFreq,
-        orig=img,
-        savePlots=False,
+        groundTruth=img,
+        savePlots=savePlots,
     )
-    plt.show()
+    # plt.show()

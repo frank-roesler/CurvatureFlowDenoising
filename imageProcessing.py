@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 from scipy.ndimage import convolve
-from parameterValues import myEpsilon
+from parameterValues import *
 
 
 def isGrayScale(img: Image) -> bool:
@@ -61,14 +61,19 @@ def getTestImageGrayscale(height: int, width: int) -> np.array:
 
 
 def circularFilter(stencilSize: int) -> np.array:
-    if stencilSize == 0:
-        return np.ones((2, 2)) / 4
     radius = stencilSize
     y, x = np.ogrid[-radius : radius + 1, -radius : radius + 1]
     mask = x**2 + y**2 <= radius**2
     kernel = np.zeros((2 * stencilSize + 1, 2 * stencilSize + 1))
     kernel[mask] = 1
     return kernel / np.sum(kernel)
+
+
+def squareFilter(stencilSize: int) -> np.array:
+    if stencilSize == 0:
+        return np.ones((2, 2)) / 4
+    kernel = np.ones((2 * stencilSize + 1, 2 * stencilSize + 1)) / (2 * stencilSize + 1) ** 2
+    return kernel
 
 
 def twoPointFilter(unitVector: np.array, stencilSize: int) -> np.array:
@@ -85,7 +90,7 @@ def twoPointFilter(unitVector: np.array, stencilSize: int) -> np.array:
 def applyTwoPointFilters(img: np.array, DxImg: np.array, DyImg: np.array, stencilSize: int) -> np.array:
     """Applies tangenmtial two-point averages to image."""
     h, w = img.shape
-    imgPadded = np.pad(img, pad_width=stencilSize, mode="reflect")
+    imgPadded = np.pad(img, pad_width=stencilSize, mode=imagePadding)
     imgGradient = np.stack([DxImg, DyImg], axis=-1)
     gradNorms = np.linalg.norm(imgGradient, axis=-1)
     imgGradient[gradNorms <= myEpsilon, :] = 0
@@ -119,5 +124,8 @@ def getTile(paddedImage: np.array, i: int, j: int, stencilSize: int) -> np.array
 
 
 def localAverage(img: np.array, stencilSize: int) -> np.array:
-    kernel = circularFilter(stencilSize)
-    return convolve(img, kernel, mode="reflect")
+    if stencilSize <= 1:
+        kernel = squareFilter(stencilSize)
+    else:
+        kernel = circularFilter(stencilSize)
+    return convolve(img, kernel, mode=imagePadding)

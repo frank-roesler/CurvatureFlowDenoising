@@ -3,30 +3,9 @@ from imageProcessing import *
 from utils import *
 from parameterValues import myEpsilon
 
-# region <old function>
-# def computeDerivatives(img: np.array) -> tuple[np.array, np.array, np.array, np.array, np.array]:
-#     imgPlusX = np.roll(img, 1, axis=1)
-#     imgMinusX = np.roll(img, -1, axis=1)
-#     imgPlusY = np.roll(img, 1, axis=0)
-#     imgMinusY = np.roll(img, -1, axis=0)
-
-#     imgPlusPlus = np.roll(imgPlusX, 1, axis=0)
-#     imgMinusMinus = np.roll(imgMinusX, -1, axis=0)
-#     imgPlusMinus = np.roll(imgPlusX, -1, axis=0)
-#     imgMinusPlus = np.roll(imgMinusX, 1, axis=0)
-
-#     DxImg = (imgMinusX - imgPlusX) / 2
-#     DyImg = (imgPlusY - imgMinusY) / 2
-#     DxxImg = imgMinusX - 2 * img + imgPlusX
-#     DyyImg = imgPlusY - 2 * img + imgMinusY
-#     DxyImg = (imgPlusPlus - imgPlusMinus - imgMinusPlus + imgMinusMinus) / 4
-
-#     return DxImg, DyImg, DxxImg, DyyImg, DxyImg
-# endregion
-
 
 def computeDerivatives(img: np.array) -> tuple[np.array, np.array, np.array, np.array, np.array]:
-    img = np.pad(img, pad_width=1, mode="reflect")
+    img = np.pad(img, pad_width=1, mode=imagePadding)
 
     imgPlusX = np.roll(img, 1, axis=1)
     imgMinusX = np.roll(img, -1, axis=1)
@@ -55,7 +34,7 @@ def computeDerivatives(img: np.array) -> tuple[np.array, np.array, np.array, np.
 def computeSignedDerivatives(
     img: np.array,
 ) -> tuple[np.array, np.array, np.array, np.array, np.array, np.array, np.array]:
-    img = np.pad(img, pad_width=1, mode="reflect")
+    img = np.pad(img, pad_width=1, mode=imagePadding)
 
     imgPlusX = np.roll(img, 1, axis=1)
     imgMinusX = np.roll(img, -1, axis=1)
@@ -124,29 +103,27 @@ def F(kappa: np.array, treshold: np.array, img: np.array, stencilSize: int) -> n
     return result, area
 
 
-def solveLevelSetEquation(
-    img: np.array,
-    stencilSize: int,
-    iterations: int,
-    dt: float,
-    plot: bool = False,
-    plottingFreq: int = 100,
-    orig: np.array = None,
-) -> np.array:
-    """Solves equation dphi/dt = F|grad(phi)| for given number of iterations.
-    Image must be binary with values in {0,1} only.
-    NEEDS TO BE UPDATED!!!."""
-    result = img
-    diffs = []
-    errs = []
-    ax, im2 = initPlots(result, plot)
-    for it in range(iterations):
-        FImg = F(0.5, result, stencilSize)
-        result = result + dt * FImg  # * np.sqrt(DxImg2 + DyImg2)
-        diffs.append(np.sqrt(np.mean(FImg**2)))
-        errs.append(np.sqrt(np.mean((orig - np.clip(result, 0, 1)) ** 2)))
-        updatePlots(ax, im2, result, errs, diffs, plot, it, plottingFreq)
-    return result
+# def solveLevelSetEquationBinary(
+#     img: np.array,
+#     stencilSize: int,
+#     iterations: int,
+#     dt: float,
+#     plot: bool = False,
+#     plottingFreq: int = 100,
+#     orig: np.array = None,
+# ) -> np.array:
+#     """NEEDS TO BE UPDATED!!! DO NOT USE!!!."""
+#     result = img
+#     diffs = []
+#     errs = []
+#     ax, im2 = initPlots(result, plot)
+#     for it in range(iterations):
+#         FImg = F(0.5, result, stencilSize)
+#         result = result + dt * FImg  # * np.sqrt(DxImg2 + DyImg2)
+#         diffs.append(np.sqrt(np.mean(FImg**2)))
+#         errs.append(np.sqrt(np.mean((orig - np.clip(result, 0, 1)) ** 2)))
+#         updatePlots(ax, im2, result, errs, diffs, plot, it, plottingFreq)
+#     return result
 
 
 def gradientModulatedMeanCurvFlow(DxImg, DyImg, FImg, meanCurv, VGradient):
@@ -202,7 +179,7 @@ def solveLevelSetEquationGrayscale(
     flowFunction,
     plot: bool = False,
     plottingFreq: int = 100,
-    orig: np.array = None,
+    groundTruth: np.array = None,
     savePlots: bool = False,
 ) -> np.array:
     """Solves equation dphi/dt = F|grad(phi)| for given number of iterations.
@@ -211,7 +188,7 @@ def solveLevelSetEquationGrayscale(
     errs = []
     result = img
     # result = np.clip(img, 0, 1)
-    ax, im1, im2, im3 = initPlots(result, plot, savePlots)
+    ax, myPlots = initPlots(result, groundTruth, plot, savePlots)
     for it in range(iterations + 2):
         kappa, DxImg, DyImg, meanCurv = curvature(result)
         thresholds = applyTwoPointFilters(result, DxImg, DyImg, stencilSize)
@@ -220,9 +197,7 @@ def solveLevelSetEquationGrayscale(
         result += dt * flowFct
 
         diffs.append(np.sqrt(np.mean(flowFct**2)))
-        errs.append(np.sqrt(np.mean((orig - np.clip(result, 0, 1)) ** 2)))
-        updatePlots(
-            ax, im1, im2, im3, result, orig, modulationArea, errs, diffs, plot, it, plottingFreq, savePlots
-        )
+        errs.append(np.sqrt(np.mean((groundTruth - np.clip(result, 0, 1)) ** 2)))
+        updatePlots(ax, myPlots, result, modulationArea, errs, diffs, plot, it, plottingFreq, savePlots)
 
     return result
